@@ -22,4 +22,4 @@ RUN npx prisma generate
 # Expose no port — bot works via polling or webhook
 
 # Default command to run bot
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "dev"]
