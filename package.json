@@ -15,11 +15,13 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/genai": "^1.9.0",
     "@prisma/client": "^6.11.0",
     "dotenv": "^17.0.1",
     "pg": "^8.16.3",
     "prisma": "^6.11.0",
-    "telegraf": "^4.16.3"
+    "telegraf": "^4.16.3",
+    "whisper-node": "^1.1.1"
   },
   "devDependencies": {
     "@types/jimp": "^0.2.1",
