@@ -10,6 +10,8 @@ import rahmetikScene from './scenes/rahmetiki'
 import { MyContext } from './types/bot'
 import { setAdmin } from './commands/set-admin'
 import { setChannel } from './commands/set-channel'
+import feedbackScene from './scenes/feedback'
+import achievementScene from './scenes/achievements'
 
 dotenv.config()
 
@@ -72,7 +74,7 @@ bot.command('menu', async (ctx) => {
   ctx.reply(`Нажми на кнопку внизу и мы начнем!`, menuKeyboard)
 })
 
-const stage = new Scenes.Stage<MyContext>([rahmetikScene])
+const stage = new Scenes.Stage<MyContext>([rahmetikScene, feedbackScene, achievementScene])
 bot.use(session())
 bot.use(stage.middleware())
 

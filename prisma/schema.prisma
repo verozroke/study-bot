@@ -18,11 +18,24 @@ model User {
 model Admin {
   id        Int    @id @default(autoincrement())
   username  String @unique
+  telegramId  String   @unique
   createdAt DateTime @default(now())
 }
 
 model Channel {
   id        Int    @id @default(autoincrement())
   username  String @unique
+  createdAt DateTime @default(now())
+}
+
+
+model Achievement {
+  id        String   @id @default(cuid())
+  userId    String @unique
+  fullName  String
+  school    String
+  position  String
+  text      String   @db.Text
+  photoId   String?  // Telegram file_id
   createdAt DateTime @default(now())
 }

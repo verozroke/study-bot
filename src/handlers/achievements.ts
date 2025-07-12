@@ -1,6 +1,23 @@
-import { Context } from 'telegraf'
+import { MyContext } from '../types/bot'
+import { PrismaClient } from '@prisma/client'
 
-export default async function handleAchievements(ctx: Context) {
-  await ctx.answerCbQuery()
-  await ctx.reply('Вы выбрали: Достижения 🎯 (будет реализовано позже)')
+const prisma = new PrismaClient()
+
+export default async function handleAchievements(ctx: MyContext) {
+  const userId = ctx.from?.id.toString()
+  if (!userId) return ctx.reply('❗ Ошибка: не удалось получить ID пользователя.')
+
+  const existing = await prisma.achievement.findFirst({ where: { userId } })
+
+  if (existing) {
+    return ctx.scene.enter('achievement-wizard', {
+      fullName: existing.fullName,
+      school: existing.school,
+      position: existing.position,
+      text: existing.text,
+      photoId: existing.photoId
+    } as any)
+  }
+
+  return ctx.scene.enter('achievement-wizard')
 }

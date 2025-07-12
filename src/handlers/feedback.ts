@@ -1,6 +1,5 @@
-import { Context } from 'telegraf'
+import { MyContext } from '../types/bot'
 
-export default async function handleFeedback(ctx: Context) {
-  await ctx.answerCbQuery()
-  await ctx.reply('Вы выбрали: Обратная связь 💬 (будет реализовано позже)')
+export default async function handleFeedback(ctx: MyContext) {
+  await ctx.scene.enter('feedback-wizard')
 }

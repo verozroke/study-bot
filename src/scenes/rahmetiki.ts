@@ -12,11 +12,11 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
   // Шаг 1: выбор стиля
   async (ctx) => {
     await ctx.reply('Выберите стиль рахметика:', Markup.inlineKeyboard([
-      [Markup.button.callback('🏃 БЕГИТ', 'style_begit')],
-      [Markup.button.callback('💪 ПРЕСС КАЧАТ', 'style_press')],
-      [Markup.button.callback('🎉 АНЖУМАНЯ', 'style_anzhumania')],
-      [Markup.button.callback('🧗 ПОДТЯГИВАНЯ', 'style_podtyagivania')],
-      [Markup.button.callback('😎 ЙОУ', 'style_you')],
+      [Markup.button.callback('Порядочность', 'style_decency')],
+      [Markup.button.callback('Счастье клиента', 'style_customer')],
+      [Markup.button.callback('Лучшая команда ', 'style_team')],
+      [Markup.button.callback('Усердная работа', 'style_work')],
+      [Markup.button.callback('Кайдзен', 'style_kaizen')],
     ]))
     return ctx.wizard.next()
   },
@@ -52,11 +52,11 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
 
       const { style, recipient, message } = ctx.wizard.state as any
       const styleToImage: Record<string, string> = {
-        begit: 'begit.jpg',
-        press: 'begit.jpg',
-        anzhumania: 'begit.jpg',
-        podtyagivania: 'begit.jpg',
-        you: 'begit.jpg'
+        decency: 'decency.png',
+        customer: 'customer.png',
+        team: 'team.png',
+        work: 'work.png',
+        kaizen: 'kaizen.png'
       }
 
       const imageFileName = styleToImage[style ?? '']
