@@ -76,17 +76,16 @@ bot.command('menu', async (ctx) => {
 })
 
 const stage = new Scenes.Stage<MyContext>([rahmetikScene, feedbackScene, achievementScene, mediatorScene])
+
 bot.use(session())
 bot.use(stage.middleware())
-
-
-
 bot.action('RAHMETIKI', handleRahmetiki)
 bot.action('ACHIEVEMENTS', handleAchievements)
 bot.action('MEDIATOR', handleMediator)
 bot.action('FEEDBACK', handleFeedback)
 bot.command('setadmin', setAdmin)
 bot.command('setchannel', setChannel)
-
 bot.launch()
+
+
 console.log('Bot is running')
