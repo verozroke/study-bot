@@ -79,6 +79,8 @@ const stage = new Scenes.Stage<MyContext>([rahmetikScene, feedbackScene, achieve
 bot.use(session())
 bot.use(stage.middleware())
 
+
+
 bot.action('RAHMETIKI', handleRahmetiki)
 bot.action('ACHIEVEMENTS', handleAchievements)
 bot.action('MEDIATOR', handleMediator)

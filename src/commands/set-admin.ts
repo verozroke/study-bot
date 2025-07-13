@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 export async function setAdmin(ctx: MyContext) {
   const parts = (ctx.message as any)?.text?.split(' ')
   if (!parts || parts.length !== 2) {
-    return ctx.reply('❗ Формат: /set-admin <секрет>')
+    return ctx.reply('❗ Формат: /setadmin <секрет>')
   }
 
   const [, secret] = parts

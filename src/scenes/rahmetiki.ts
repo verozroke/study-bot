@@ -75,9 +75,10 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
         return ctx.scene.leave()
       }
 
-      await ctx.telegram.sendPhoto(`@${channel.username}`, { source: fs.readFileSync(imagePath) }, {
+      await ctx.telegram.sendPhoto(channel.groupId.toString(), { source: fs.readFileSync(imagePath) }, {
         caption,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        message_thread_id: channel.messageThreadId
       })
 
       await ctx.reply('✅ Ваш рахметик опубликован! Спасибо, что делитесь добротой 🙏')

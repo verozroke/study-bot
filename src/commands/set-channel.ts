@@ -1,39 +1,47 @@
+// src/commands/set-channel.ts
 import { MyContext } from '../types/bot'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+
 export async function setChannel(ctx: MyContext) {
   const parts = (ctx.message as any)?.text?.split(' ')
-  if (!parts || parts.length !== 3) {
-    return ctx.reply('❗ Формат: /set-channel <секрет> <https://t.me/channel>')
+  if (!parts || parts.length !== 4) {
+    return ctx.reply('❗ Формат: /setchannel <секрет> <https://t.me/groupchat> <порядковый_номер_топика>')
   }
 
-  const [, secret, url] = parts
+  const [, secret, url, threadId] = parts
 
   if (secret !== process.env.CHANNEL_SECRET) {
     return ctx.reply('🚫 Неверное секретное слово.')
   }
 
   const match = url.match(/t\.me\/([a-zA-Z0-9_]+)/)
-  if (!match) return ctx.reply('❗ Неверная ссылка на канал.')
+  if (!match) return ctx.reply('❗ Неверная ссылка на чат.')
 
   const username = match[1]
 
   try {
-    const msg = await ctx.telegram.sendMessage(`@${username}`, '🛠️ Канал установлен как целевой.')
+    // Получаем информацию о чате
+    const chat = await ctx.telegram.getChat(`@${username}`)
+    if (!chat || !chat.id) {
+      return ctx.reply('❗ Не удалось получить ID группы.')
+    }
 
-    // Удалим старый, сохраним новый
+
     await prisma.channel.deleteMany()
     await prisma.channel.create({
       data: {
         username,
+        groupId: BigInt(chat.id),
+        messageThreadId: parseInt(threadId),
       }
     })
 
-    return ctx.reply(`✅ Канал @${username} успешно установлен.`)
+    return ctx.reply(`✅ Группа @${username} и топик "${threadId}" успешно установлены.`)
   } catch (err) {
     console.error(err)
-    return ctx.reply('❗ Бот не может написать в канал. Убедитесь, что он добавлен как админ.')
+    return ctx.reply('❗ Ошибка при установке группы и топика. Убедитесь, что бот является админом.')
   }
 }
