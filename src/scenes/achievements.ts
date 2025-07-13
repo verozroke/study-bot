@@ -84,7 +84,7 @@ const achievementScene = new Scenes.WizardScene<MyContext>(
       [Markup.button.callback('⛔ Нет', 'no_photo')],
     ]))
 
-    return ctx.wizard.next()  // <--- важно!
+    return ctx.wizard.next()
   },
 
   // Обработка выбора добавлять фото или нет

@@ -23,12 +23,10 @@ export async function setChannel(ctx: MyContext) {
   const username = match[1]
 
   try {
-    // Получаем информацию о чате
     const chat = await ctx.telegram.getChat(`@${username}`)
     if (!chat || !chat.id) {
       return ctx.reply('❗ Не удалось получить ID группы.')
     }
-
 
     await prisma.channel.deleteMany()
     await prisma.channel.create({

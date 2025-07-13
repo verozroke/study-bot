@@ -16,5 +16,4 @@ export async function query(prompt: string): Promise<string> {
   // @ts-ignore
   const text = response.candidates[0].content?.parts[0].text as string
   return text
-
 }

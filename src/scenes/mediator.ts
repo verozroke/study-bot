@@ -4,6 +4,10 @@ import { MyContext } from '../types/bot'
 import { query } from '../utils/genai/query'
 import { generatePrompt } from '../utils/genai/prompt'
 import { splitMessage } from '../utils/split-messages'
+import path from 'path'
+import axios from 'axios'
+import fs from 'fs'
+import { getTranscript, upload } from '../utils/genai/voice'
 
 const mediatorScene = new Scenes.WizardScene<MyContext>(
   'mediator-wizard',
@@ -28,13 +32,35 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
     return ctx.wizard.next()
   },
 
-  // Шаг 3: Ответ (заглушка)
+  // Шаг 3: Ответ
   async (ctx) => {
+    let voicePath: string | null = null
     if ('voice' in (ctx.message || {})) {
 
       const voice = (ctx.message as any).voice;
-      console.log('Получено голосовое сообщение:', voice.file_id);
-      (ctx.wizard.state as any).context = '[голосовое сообщение]';
+      const fileId = voice.file_id;
+
+      // Получаем file_path от Telegram
+      const fileInfo = await ctx.telegram.getFile(fileId)
+      const fileUrl = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/${fileInfo.file_path}`
+
+      // Локальный путь для сохранения .ogg
+      const fileName = `${fileId}.ogg`
+      voicePath = path.join(__dirname, '..', 'temp', fileName)
+
+      // Скачиваем файл
+      const response = await axios.get(fileUrl, { responseType: 'stream' })
+      await new Promise((resolve, reject) => {
+        const stream = fs.createWriteStream(voicePath as string)
+        response.data.pipe(stream)
+        //@ts-ignore
+        stream.on('finish', resolve)
+        stream.on('error', reject)
+      })
+
+      const file = await upload(voicePath)
+      const transcript = await getTranscript(file);
+      (ctx.wizard.state as any).context = transcript
 
     } else if ('text' in (ctx.message || {})) {
       (ctx.wizard.state as any).context = (ctx.message as any).text;
@@ -43,11 +69,6 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
 
       return ctx.reply('❗ Пожалуйста, отправьте текст или голосовое сообщение.')
     }
-    // TODO: get the transcript from the audio or pass the text as param to the query
-
-    // TODO: generate keyboard of yes or no 
-
-    // TODO: ctx.reply of the query content and pass the keyboad
 
     const state = ctx.wizard.state as any
     const propmpt = generatePrompt({ category: state.type, context: state.context })
