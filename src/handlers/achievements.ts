@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export default async function handleAchievements(ctx: MyContext) {
+  await ctx.answerCbQuery()
   const userId = ctx.from?.id.toString()
   if (!userId) return ctx.reply('❗ Ошибка: не удалось получить ID пользователя.')
 

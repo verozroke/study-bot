@@ -1,6 +1,7 @@
 import { MyContext } from "../types/bot"
 
 export default async function mediatorHandler(ctx: MyContext) {
+  await ctx.answerCbQuery()
   try {
     await ctx.scene.enter('mediator-wizard')
   } catch (e) {
