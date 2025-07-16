@@ -109,7 +109,7 @@ feedbackScene.hears('❌ Отмена', async (ctx) => {
 
 feedbackScene.action('cancel', async (ctx) => {
   await ctx.answerCbQuery()
-  await ctx.editMessageText('❌ Действие отменено.')
+  await ctx.reply('❌ Действие отменено.')
   return ctx.scene.leave()
 })
 

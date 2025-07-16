@@ -83,7 +83,6 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
       await ctx.telegram.sendPhoto(channel.groupId.toString(), { source: fs.readFileSync(imagePath) }, {
         caption,
         parse_mode: 'Markdown',
-        message_thread_id: channel.messageThreadId
       })
 
       await ctx.reply('✅ Ваш рахметик опубликован! Спасибо, что делитесь добротой 🙏')
@@ -101,7 +100,7 @@ rahmetikScene.hears('❌ Отмена', async (ctx) => {
 
 rahmetikScene.action('cancel', async (ctx) => {
   await ctx.answerCbQuery()
-  await ctx.editMessageText('❌ Действие отменено.')
+  await ctx.reply('❌ Действие отменено.')
   return ctx.scene.leave()
 })
 

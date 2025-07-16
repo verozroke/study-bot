@@ -77,6 +77,8 @@ bot.command('menu', async (ctx) => {
 
 const stage = new Scenes.Stage<MyContext>([rahmetikScene, feedbackScene, achievementScene, mediatorScene])
 
+
+
 bot.use(session())
 bot.use(stage.middleware())
 bot.action('RAHMETIKI', handleRahmetiki)

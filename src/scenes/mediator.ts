@@ -117,7 +117,7 @@ mediatorScene.hears('❌ Отмена', async (ctx) => {
 
 mediatorScene.action('cancel', async (ctx) => {
   await ctx.answerCbQuery()
-  await ctx.editMessageText('❌ Действие отменено.')
+  await ctx.reply('❌ Действие отменено.')
   return ctx.scene.leave()
 })
 

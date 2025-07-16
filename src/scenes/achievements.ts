@@ -187,7 +187,7 @@ achievementScene.hears('❌ Отмена', async (ctx) => {
 
 achievementScene.action('cancel', async (ctx) => {
   await ctx.answerCbQuery()
-  await ctx.editMessageText('❌ Действие отменено.')
+  await ctx.reply('❌ Действие отменено.')
   return ctx.scene.leave()
 })
 
