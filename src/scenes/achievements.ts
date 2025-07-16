@@ -15,6 +15,7 @@ function showPreview(ctx: MyContext) {
   const keyboard = Markup.inlineKeyboard([
     [Markup.button.callback('✅ Отправить', 'confirm')],
     [Markup.button.callback('🔁 Изменить', 'edit')],
+    [Markup.button.callback('❌ Отмена', 'cancel')]
   ])
 
   if (state.photoId) {
@@ -52,25 +53,33 @@ const achievementScene = new Scenes.WizardScene<MyContext>(
       return showPreview(ctx)
     }
 
-    await ctx.reply('📌 Укажите ваше ФИО')
+    await ctx.reply('📌 Укажите ваше ФИО', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
   async (ctx) => {
     ; (ctx.wizard.state as any).fullName = (ctx.message as any).text
-    await ctx.reply('🏫 Укажите вашу школу')
+    await ctx.reply('🏫 Укажите вашу школу', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
   async (ctx) => {
     ; (ctx.wizard.state as any).school = (ctx.message as any).text
-    await ctx.reply('👨‍🏫 Укажите вашу должность')
+    await ctx.reply('👨‍🏫 Укажите вашу должность', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
   async (ctx) => {
     ; (ctx.wizard.state as any).position = (ctx.message as any).text
-    await ctx.reply('✏️ Опишите достижение (до 300 символов)')
+    await ctx.reply('✏️ Опишите достижение (до 300 символов)', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
@@ -82,6 +91,7 @@ const achievementScene = new Scenes.WizardScene<MyContext>(
     await ctx.reply('📷 Хотите добавить фото?', Markup.inlineKeyboard([
       [Markup.button.callback('📎 Да', 'yes_photo')],
       [Markup.button.callback('⛔ Нет', 'no_photo')],
+      [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
 
     return ctx.wizard.next()
@@ -91,7 +101,9 @@ const achievementScene = new Scenes.WizardScene<MyContext>(
   async (ctx) => {
     const action = (ctx.update as any)?.callback_query?.data
     if (action === 'yes_photo') {
-      await ctx.reply('📤 Пожалуйста, отправьте изображение.')
+      await ctx.reply('📤 Пожалуйста, отправьте изображение.', Markup.keyboard([
+        ['❌ Отмена']
+      ]).oneTime().resize())
       return ctx.wizard.next()
     } else {
       return showPreview(ctx)
@@ -166,5 +178,19 @@ achievementScene.action('edit', async (ctx) => {
   await ctx.reply('📌 Укажите ваше ФИО')
   return ctx.wizard.selectStep(1)
 })
+
+
+achievementScene.hears('❌ Отмена', async (ctx) => {
+  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
+  return ctx.scene.leave()
+})
+
+achievementScene.action('cancel', async (ctx) => {
+  await ctx.answerCbQuery()
+  await ctx.editMessageText('❌ Действие отменено.')
+  return ctx.scene.leave()
+})
+
+
 
 export default achievementScene

@@ -19,6 +19,7 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
       [Markup.button.callback('📈 Предложение по улучшению', 'type_suggestion')],
       [Markup.button.callback('💡 Идея', 'type_idea')],
       [Markup.button.callback('⚠️ Проблема / Жалоба', 'type_problem')],
+      [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
     return ctx.wizard.next()
   },
@@ -28,7 +29,9 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
     if ('callback_query' in ctx.update && (ctx.update.callback_query as any).data) {
       (ctx.wizard.state as any).type = (ctx.update.callback_query as any).data.replace('type_', '')
       await ctx.answerCbQuery()
-      await ctx.reply('✏️ Напишите ваше сообщение (до 500 символов):')
+      await ctx.reply('✏️ Напишите ваше сообщение (до 500 символов):', Markup.keyboard([
+        ['❌ Отмена']
+      ]).oneTime().resize())
       return ctx.wizard.next()
     }
   },
@@ -39,7 +42,9 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
       (ctx.wizard.state as any).text = ctx.message.text.slice(0, 500)
       await ctx.reply('👤 Хотите указать своё имя?', Markup.inlineKeyboard([
         [Markup.button.callback('Да', 'show_name')],
-        [Markup.button.callback('Нет', 'anonymous')]
+        [Markup.button.callback('Нет', 'anonymous')],
+        [Markup.button.callback('❌ Отмена', 'cancel')]
+
       ]))
       return ctx.wizard.next()
     }
@@ -52,7 +57,9 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
       await ctx.answerCbQuery()
 
       if (action === 'show_name') {
-        await ctx.reply('Введите ваше имя, школу и должность:')
+        await ctx.reply('Введите ваше имя, школу и должность:', Markup.keyboard([
+          ['❌ Отмена']
+        ]).oneTime().resize())
         return ctx.wizard.next()
       } else {
         (ctx.wizard.state as any).sender = 'Аноним'
@@ -93,5 +100,18 @@ async function sendFeedback(ctx: MyContext) {
   await ctx.reply('✅ Ваше обращение отправлено HR-команде. Спасибо за откровенность!')
   return ctx.scene.leave()
 }
+
+
+feedbackScene.hears('❌ Отмена', async (ctx) => {
+  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
+  return ctx.scene.leave()
+})
+
+feedbackScene.action('cancel', async (ctx) => {
+  await ctx.answerCbQuery()
+  await ctx.editMessageText('❌ Действие отменено.')
+  return ctx.scene.leave()
+})
+
 
 export default feedbackScene

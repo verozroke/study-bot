@@ -18,6 +18,7 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
       [Markup.button.callback('🧑‍🎓 С учеником', 'student')],
       [Markup.button.callback('👨‍👩‍👧 С родителем', 'parent')],
       [Markup.button.callback('🧑‍🤝‍🧑 С коллегой', 'colleague')],
+      [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
     return ctx.wizard.next()
   },
@@ -28,7 +29,9 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
     if (!data) return ctx.reply('❗ Пожалуйста, выберите тип ситуации.');
     (ctx.wizard.state as any).type = data
 
-    await ctx.reply('📝 Опишите ситуацию или запишите голосовое сообщение (до 300 символов).')
+    await ctx.reply('📝 Опишите ситуацию или запишите голосовое сообщение (до 300 символов).', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
@@ -73,6 +76,8 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
     const state = ctx.wizard.state as any
     const propmpt = generatePrompt({ category: state.type, context: state.context })
     const message = await query(propmpt)
+
+    console.log(message)
     const parts = splitMessage(message)
     for (const part of parts) {
       await ctx.reply(part, { parse_mode: 'HTML' })
@@ -81,6 +86,7 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
     await ctx.reply('📊 Был ли этот ответ полезен?', Markup.inlineKeyboard([
       [Markup.button.callback('👍 Да', 'feedback_yes')],
       [Markup.button.callback('👎 Нет', 'feedback_no')],
+      [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
 
 
@@ -102,5 +108,18 @@ const mediatorScene = new Scenes.WizardScene<MyContext>(
     return ctx.reply('❗ Пожалуйста, выберите "Да" или "Нет".')
   }
 )
+
+
+mediatorScene.hears('❌ Отмена', async (ctx) => {
+  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
+  return ctx.scene.leave()
+})
+
+mediatorScene.action('cancel', async (ctx) => {
+  await ctx.answerCbQuery()
+  await ctx.editMessageText('❌ Действие отменено.')
+  return ctx.scene.leave()
+})
+
 
 export default mediatorScene

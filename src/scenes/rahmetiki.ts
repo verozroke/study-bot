@@ -17,6 +17,7 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
       [Markup.button.callback('Лучшая команда ', 'style_team')],
       [Markup.button.callback('Усердная работа', 'style_work')],
       [Markup.button.callback('Кайдзен', 'style_kaizen')],
+      [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
     return ctx.wizard.next()
   },
@@ -31,7 +32,9 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
 
     (ctx.wizard.state as any).style = data.replace('style_', '')
     await ctx.answerCbQuery()
-    await ctx.reply('Кому вы хотите отправить рахметик? (Имя)')
+    await ctx.reply('Кому вы хотите отправить рахметик? (Имя)', Markup.keyboard([
+      ['❌ Отмена']
+    ]).oneTime().resize())
     return ctx.wizard.next()
   },
 
@@ -39,7 +42,9 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
   async (ctx) => {
     if (ctx.message && 'text' in ctx.message) {
       (ctx.wizard.state as any).recipient = ctx.message.text
-      await ctx.reply('За что вы благодарны? (до 100 символов)')
+      await ctx.reply('За что вы благодарны? (до 100 символов)', Markup.keyboard([
+        ['❌ Отмена']
+      ]).oneTime().resize())
       return ctx.wizard.next()
     }
     await ctx.reply('Пожалуйста, введите имя получателя.')
@@ -88,5 +93,18 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
     await ctx.reply('Пожалуйста, введите сообщение благодарности (до 100 символов).')
   }
 )
+
+rahmetikScene.hears('❌ Отмена', async (ctx) => {
+  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
+  return ctx.scene.leave()
+})
+
+rahmetikScene.action('cancel', async (ctx) => {
+  await ctx.answerCbQuery()
+  await ctx.editMessageText('❌ Действие отменено.')
+  return ctx.scene.leave()
+})
+
+
 
 export default rahmetikScene
