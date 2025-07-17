@@ -71,7 +71,7 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
       }
 
       const imagePath = path.resolve(__dirname, '..', 'assets', 'rahmetiki', imageFileName)
-      const caption = `🌟 *Рахметик!*\n👤 *Кому:* ${recipient}\n🙏 *За что:* ${message}`
+      const caption = `🌟 *Алғыс білдіремін!*\n👤 *Кому:* ${recipient}\n🙏 *За что:* ${message}`
 
       const channel = await prisma.channel.findFirst()
 
