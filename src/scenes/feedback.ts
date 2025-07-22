@@ -10,6 +10,17 @@ const typeMap = {
   'problem': 'Проблема / Жалоба',
 }
 
+
+const beforeFeedbackPromiseMap = {
+  'type_suggestion': `💡 Есть идея или предложение по улучшению процессов? 
+
+📌 Пожалуйста, подумай над вопросами:
+✔️ Что именно ты хочешь улучшить
+✔️ Почему это важно
+✔️ Как это повлияет на учеников, коллег или школу`,
+  'type_problem': `✍️ Напиши свое обращение ниже. 🔒 Все сообщения обрабатываются конфиденциально.`
+}
+
 const feedbackScene = new Scenes.WizardScene<MyContext>(
   'feedback-wizard',
 
@@ -17,7 +28,6 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
   async (ctx) => {
     await ctx.reply('📌 Выберите тип обращения:', Markup.inlineKeyboard([
       [Markup.button.callback('📈 Предложение по улучшению', 'type_suggestion')],
-      [Markup.button.callback('💡 Идея', 'type_idea')],
       [Markup.button.callback('⚠️ Проблема / Жалоба', 'type_problem')],
       [Markup.button.callback('❌ Отмена', 'cancel')]
     ]))
@@ -28,7 +38,14 @@ const feedbackScene = new Scenes.WizardScene<MyContext>(
   async (ctx) => {
     if ('callback_query' in ctx.update && (ctx.update.callback_query as any).data) {
       (ctx.wizard.state as any).type = (ctx.update.callback_query as any).data.replace('type_', '')
+
+      const type = (ctx.wizard.state as any).type;
+
       await ctx.answerCbQuery()
+
+      await ctx.reply(beforeFeedbackPromiseMap[type as keyof typeof beforeFeedbackPromiseMap])
+
+
       await ctx.reply('✏️ Напишите ваше сообщение (до 500 символов):', Markup.keyboard([
         ['❌ Отмена']
       ]).oneTime().resize())
@@ -97,7 +114,7 @@ async function sendFeedback(ctx: MyContext) {
 👤 От: ${sender ?? 'Аноним'}`
   await ctx.telegram.sendMessage(admin.telegramId, msg, { parse_mode: 'Markdown' })
 
-  await ctx.reply('✅ Ваше обращение отправлено HR-команде. Спасибо за откровенность!')
+  await ctx.reply('✅ Ваше обращение отправлено HR-команде. ✅ Спасибо за вашу вовлечённость!')
   return ctx.scene.leave()
 }
 
