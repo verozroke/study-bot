@@ -31,7 +31,7 @@ const achievementScene = new Scenes.WizardScene<MyContext>(
     }
     ; (ctx.wizard.state as any).fullNamePhone = (ctx.message as any).text
     await ctx.reply(
-      '🏫 Выберите школу получателя:',
+      '🏫 Выберите вашу школу:',
       Markup.keyboard(schools.map(s => [s])).oneTime().resize()
     )
     return ctx.wizard.next()

@@ -94,7 +94,6 @@ const stage = new Scenes.Stage<MyContext>([
   //  mediatorScene
 ])
 
-
 bot.use(session())
 bot.use(stage.middleware())
 bot.action('RAHMETIKI', handleRahmetiki)
