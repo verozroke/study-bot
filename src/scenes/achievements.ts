@@ -1,172 +1,184 @@
+// src/scenes/achievements.ts
 import { Scenes, Markup } from 'telegraf'
 import { MyContext } from '../types/bot'
 import { PrismaClient } from '@prisma/client'
-
+import { escapeMarkdownV2 } from '../utils/escape'
+const u = (s: string) => escapeMarkdownV2(s);
 const prisma = new PrismaClient()
-
-function showPreview(ctx: MyContext) {
-  const state = ctx.wizard.state as any
-
-  const text =
-    `📋 *Предпросмотр*\n` +
-    `👤 ${state.fullName} (${state.position}, ${state.school})\n\n` +
-    `📌 ${state.text}`
-
-  const keyboard = Markup.inlineKeyboard([
-    [Markup.button.callback('✅ Отправить', 'confirm')],
-    [Markup.button.callback('🔁 Изменить', 'edit')],
-    [Markup.button.callback('❌ Отмена', 'cancel')]
-  ])
-
-  if (state.photoId) {
-    return ctx.replyWithPhoto(state.photoId, {
-      caption: text,
-      parse_mode: 'Markdown',
-      reply_markup: keyboard.reply_markup,
-    })
-  }
-
-  return ctx.reply(text, {
-    parse_mode: 'Markdown',
-    reply_markup: keyboard.reply_markup,
-  })
-}
+const schools = [
+  'BINOM – им. К.Сатпаева', 'BINOM – им. А. Бөкейхана', 'BINOM – им. Қадыр Мырза Әлі',
+  'BINOM – им. А. Байтұрсынұлы', 'BINOM – им. Ы. Алтынсарина', 'BINOM – им. Ә. Кекілбаева',
+  'BINOM – им. Д. Қонаева', 'BINOM – им. Әл-Фараби', 'Quantum TECH', 'Quantum STEM',
+  'Riviera Intellectual School', 'Farabi Шымкент', 'Farabi Атырау', 'BI Education'
+]
 
 const achievementScene = new Scenes.WizardScene<MyContext>(
   'achievement-wizard',
 
-  // Шаг 1.1 – ФИО, школа, должность
+  // 0. ФИО и номер
   async (ctx) => {
-    const userId = ctx.from?.id.toString()
-    const existing = await prisma.achievement.findFirst({
-      where: { userId },
-    })
+    await ctx.reply(
+      '📌 Укажите ваше ФИО и номер телефона:',
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
+    )
+    return ctx.wizard.next()
+  },
 
-    if (existing) {
-      const state = ctx.wizard.state as any
-      state.fullName = existing.fullName
-      state.school = existing.school
-      state.position = existing.position
-      state.text = existing.text
-      state.photoId = existing.photoId
-
-      return showPreview(ctx)
+  // 1. Сохраняем ФИО+телефон → школа
+  async (ctx) => {
+    if (!(ctx.message as any).text) {
+      return ctx.reply('❗ Пожалуйста, введите текстом ФИО и номер.')
     }
-
-    await ctx.reply('📌 Укажите ваше ФИО', Markup.keyboard([
-      ['❌ Отмена']
-    ]).oneTime().resize())
+    ; (ctx.wizard.state as any).fullNamePhone = (ctx.message as any).text
+    await ctx.reply(
+      '🏫 Выберите школу получателя:',
+      Markup.keyboard(schools.map(s => [s])).oneTime().resize()
+    )
     return ctx.wizard.next()
   },
 
+  // 2. Школа → должность
   async (ctx) => {
-    ; (ctx.wizard.state as any).fullName = (ctx.message as any).text
-    await ctx.reply('🏫 Укажите вашу школу', Markup.keyboard([
-      ['❌ Отмена']
-    ]).oneTime().resize())
-    return ctx.wizard.next()
-  },
-
-  async (ctx) => {
+    if (!(ctx.message as any).text || !schools.includes((ctx.message as any).text)) {
+      return ctx.reply('❗ Пожалуйста, выберите школу из списка.')
+    }
     ; (ctx.wizard.state as any).school = (ctx.message as any).text
-    await ctx.reply('👨‍🏫 Укажите вашу должность', Markup.keyboard([
-      ['❌ Отмена']
-    ]).oneTime().resize())
+    await ctx.reply(
+      '👨‍🏫 Укажите вашу должность:',
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
+    )
     return ctx.wizard.next()
   },
 
+  // 3. Должность → что сделал
   async (ctx) => {
+    if (!(ctx.message as any).text) {
+      return ctx.reply('❗ Пожалуйста, введите вашу должность.')
+    }
     ; (ctx.wizard.state as any).position = (ctx.message as any).text
-    await ctx.reply('✏️ Опишите достижение (до 300 символов)', Markup.keyboard([
-      ['❌ Отмена']
-    ]).oneTime().resize())
+    await ctx.reply(
+      `📣 Давай расскажем о твоей идее или проекте, чтобы это стало вдохновением для других и помогло развивать культуру обмена опытом в нашей школе 😊
+
+✍️ Расскажи коротко, в чём заключалась идея или проект?`,
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
+    )
     return ctx.wizard.next()
   },
 
+  // 4.1 Что сделал → что изменилось
   async (ctx) => {
-    const message = ctx.message as any
+    if (!(ctx.message as any).text) {
+      return ctx.reply('❗ Пожалуйста, расскажите о проекте.')
+    }
+    ; (ctx.wizard.state as any).what = (ctx.message as any).text
+    await ctx.reply(
+      `✏️ Опиши, какие положительные изменения ты заметил(а) после реализации твоей идеи/проекта?
+
+📌 Например: Дети стали обсуждать прочитанные книги вне уроков…`,
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
+    )
+    return ctx.wizard.next()
+  },
+
+  // 4.2 Что изменилось → прикрепить
+  async (ctx) => {
+    if (!(ctx.message as any).text) {
+      return ctx.reply('❗ Пожалуйста, опишите изменения.')
+    }
+    ; (ctx.wizard.state as any).impact = (ctx.message as any).text
+    await ctx.reply(
+      `📎 Поделись фото или файлом (.pptx .pdf .docx .xlsx .txt) – 
+- изображение с мероприятия  
+- постер или схема  
+- слайд из презентации`,
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
+    )
+    return ctx.wizard.next()
+  },
+
+  // 5. Фото или документ → предпросмотр
+  async (ctx) => {
     const state = ctx.wizard.state as any
 
-    state.text = message?.text ?? ''
-    await ctx.reply('📷 Хотите добавить фото?', Markup.inlineKeyboard([
-      [Markup.button.callback('📎 Да', 'yes_photo')],
-      [Markup.button.callback('⛔ Нет', 'no_photo')],
-      [Markup.button.callback('❌ Отмена', 'cancel')]
-    ]))
+    // фото
+    if ((ctx.message as any).photo) {
+      const photo = (ctx.message as any).photo.at(-1)!
+      state.fileType = 'photo'
+      state.fileId = photo.file_id
 
-    return ctx.wizard.next()
-  },
-
-  // Обработка выбора добавлять фото или нет
-  async (ctx) => {
-    const action = (ctx.update as any)?.callback_query?.data
-    if (action === 'yes_photo') {
-      await ctx.reply('📤 Пожалуйста, отправьте изображение.', Markup.keyboard([
-        ['❌ Отмена']
-      ]).oneTime().resize())
-      return ctx.wizard.next()
+      // документ
+    } else if ((ctx.message as any).document) {
+      const doc = (ctx.message as any).document
+      const ext = doc.file_name?.split('.').pop()?.toLowerCase()
+      if (!ext || !['pptx', 'pdf', 'docx', 'xlsx', 'txt'].includes(ext)) {
+        return ctx.reply('❗ Формат не поддерживается.')
+      }
+      state.fileType = 'document'
+      state.fileId = doc.file_id
+      state.fileName = doc.file_name
     } else {
-      return showPreview(ctx)
-    }
-  },
-
-  // Получение фото
-  async (ctx) => {
-    const photo =
-      ctx.message && 'photo' in ctx.message ? ctx.message.photo?.at(-1) : null
-
-    if (!photo) {
-      return ctx.reply('❗ Пожалуйста, отправьте изображение.')
+      return ctx.reply('❗ Пожалуйста, прикрепите фото или файл.')
     }
 
-    ; (ctx.wizard.state as any).photoId = photo.file_id
-    return showPreview(ctx)
+    // строим предпросмотр
+    const { fullNamePhone, school, position, what, impact, fileType, fileName } = state
+    let text =
+      `📋 *Предпросмотр достижения*\n\n` +
+      `👤 ${u(fullNamePhone)}\n` +
+      `🏫 ${u(school)}\n` +
+      `👔 ${u(position)}\n\n` +
+      `✍️ *Что:* ${u(what)}\n` +
+      `✏️ *Что изменилось:* ${u(impact)}\n\n`;
+    text += fileType === 'photo'
+      ? `📷 Фото прикреплено`
+      : `📄 Файл: ${u(fileName || '')}`;
+
+    await ctx.reply(text, {
+      parse_mode: 'MarkdownV2',
+      reply_markup: Markup.inlineKeyboard([
+        [Markup.button.callback('✅ Отправить', 'send')],
+        [Markup.button.callback('❌ Отмена', 'cancel')],
+      ]).reply_markup
+    })
+    return ctx.wizard.next()
   }
 )
 
-achievementScene.action('confirm', async (ctx) => {
+// Confirm / Cancel
+achievementScene.action('send', async (ctx) => {
   const state = ctx.wizard.state as any
-  const userId = ctx.from!.id.toString()
-
-  await prisma.achievement.upsert({
-    where: {
-      userId: userId,
-    },
-    update: {
-      fullName: state.fullName,
-      school: state.school,
-      position: state.position,
-      text: state.text,
-      photoId: state.photoId,
-    },
-    create: {
-      userId,
-      fullName: state.fullName,
-      school: state.school,
-      position: state.position,
-      text: state.text,
-      photoId: state.photoId,
-    },
-  })
-
   const admin = await prisma.admin.findFirst()
 
   if (!admin) {
-    await ctx.reply('⚠️ Достижение сохранено. Но админ не назначен.')
+    await ctx.reply('❗ Админ не найден.')
     return ctx.scene.leave()
   }
 
-  const caption =
-    `📢 *Новое достижение*\n👤 ${state.fullName} (${state.position}, ${state.school})\n\n📌 ${state.text}`
+  const summary =
+    `📋 *Новое достижение*\n\n` +
+    `👤 ${u(state.fullNamePhone)}\n` +
+    `🏫 ${u(state.school)}\n` +
+    `👔 ${u(state.position)}`
 
-  if (state.photoId) {
-    await ctx.telegram.sendPhoto(admin.telegramId, state.photoId, {
-      caption,
-      parse_mode: 'Markdown',
+  const details =
+    `✍️ *Что:*\n${u(state.what)}\n\n` +
+    `✏️ *Что изменилось:*\n${u(state.impact)}`
+
+  if (state.fileType === 'photo') {
+    await ctx.telegram.sendPhoto(admin.telegramId, state.fileId, {
+      caption: summary,
+      parse_mode: 'MarkdownV2'
     })
-  } else {
-    await ctx.telegram.sendMessage(admin.telegramId, caption, {
-      parse_mode: 'Markdown',
+    await ctx.telegram.sendMessage(admin.telegramId, details, {
+      parse_mode: 'MarkdownV2'
+    })
+  } else if (state.fileType === 'document') {
+    await ctx.telegram.sendDocument(admin.telegramId, state.fileId, {
+      caption: summary + `\n\n📄 ${u(state.fileName)}`,
+      parse_mode: 'MarkdownV2'
+    })
+    await ctx.telegram.sendMessage(admin.telegramId, details, {
+      parse_mode: 'MarkdownV2'
     })
   }
 
@@ -174,23 +186,14 @@ achievementScene.action('confirm', async (ctx) => {
   return ctx.scene.leave()
 })
 
-achievementScene.action('edit', async (ctx) => {
-  await ctx.reply('📌 Укажите ваше ФИО')
-  return ctx.wizard.selectStep(1)
-})
-
-
-achievementScene.hears('❌ Отмена', async (ctx) => {
-  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
-  return ctx.scene.leave()
-})
-
 achievementScene.action('cancel', async (ctx) => {
   await ctx.answerCbQuery()
-  await ctx.reply('❌ Действие отменено.')
+  await ctx.reply('❌ Отменено.', Markup.removeKeyboard())
   return ctx.scene.leave()
 })
-
-
+achievementScene.hears('❌ Отмена', async (ctx) => {
+  await ctx.reply('❌ Отменено.', Markup.removeKeyboard())
+  return ctx.scene.leave()
+})
 
 export default achievementScene

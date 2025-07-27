@@ -77,7 +77,7 @@ bot.start(async (ctx) => {
   `, menuKeyboard)
 
   ctx.reply(`
-    Уважаемый ${user.first_name}! 
+    Уважаемый ${user.first_name}!
     ${WELCOME_TEXT_RU}
   `, menuKeyboard)
 })
