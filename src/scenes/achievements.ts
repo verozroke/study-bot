@@ -5,13 +5,26 @@ import { PrismaClient } from '@prisma/client'
 import { escapeMarkdownV2 } from '../utils/escape'
 const u = (s: string) => escapeMarkdownV2(s);
 const prisma = new PrismaClient()
-const schools = [
-  'BINOM – им. К.Сатпаева', 'BINOM – им. А. Бөкейхана', 'BINOM – им. Қадыр Мырза Әлі',
-  'BINOM – им. А. Байтұрсынұлы', 'BINOM – им. Ы. Алтынсарина', 'BINOM – им. Ә. Кекілбаева',
-  'BINOM – им. Д. Қонаева', 'BINOM – им. Әл-Фараби', 'Quantum TECH', 'Quantum STEM',
-  'Riviera Intellectual School', 'Farabi Шымкент', 'Farabi Атырау', 'BI Education'
-]
 
+const schools = [
+  'BINOM - им. К.Сатпаева',
+  'BINOM - им. А. Бөкейхана',
+  'BINOM - им. Қадыр Мырза Әлі',
+  'BINOM - им. А. Байтұрсынұлы',
+  'BINOM - им. Ы. Алтынсарина',
+  'BINOM - им. Ә. Кекілбаева',
+  'BINOM - им. Д. Қонаева',
+  'BINOM - им. Әл-Фараби',
+  'Quantum TECH',
+  'Quantum STEM',
+  'Riviera International School',
+  'BI Education',
+  'УК BINOM',
+  'FARABI Шымкент',
+  'FARABI Атырау',
+  'УК FARABI',
+  'QMC',
+]
 const achievementScene = new Scenes.WizardScene<MyContext>(
   'achievement-wizard',
 

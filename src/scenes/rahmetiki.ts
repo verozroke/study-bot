@@ -4,10 +4,13 @@ import { MyContext } from '../types/bot'
 import fs from 'fs'
 import path from 'path'
 import { PrismaClient } from '@prisma/client'
+import { escapeMarkdownV2 } from '../utils/escape'
+const u = (s: string) => escapeMarkdownV2(s);
 
 const prisma = new PrismaClient()
 
 const schools = [
+  'Aldi BI',
   'BINOM - им. К.Сатпаева',
   'BINOM - им. А. Бөкейхана',
   'BINOM - им. Қадыр Мырза Әлі',
@@ -19,130 +22,98 @@ const schools = [
   'Quantum TECH',
   'Quantum STEM',
   'Riviera International School',
-  'Farabi Шымкент',
-  'Farabi Атырау',
-  'BI Education'
+  'BI Education',
+  'УК BINOM',
+  'FARABI Шымкент',
+  'УК FARABI',
+  'QMC',
 ]
 
 const rahmetikScene = new Scenes.WizardScene<MyContext>(
   'rahmetiki-wizard',
 
-  // Шаг 1: Выбор способа указания имени
+  // Шаг 1: Получение имени и опционального username
   async (ctx) => {
     await ctx.reply(
-      `Хочешь отправить благодарность — супер! 😊 Посмотри примеры алғысов в чате "Алғыс сөздері"! 
+      `Хотите отправить благодарность? Отлично! 😊 Посмотри примеры алғысов в чате "Алғыс сөздері"! 
 
-Напишите кому вы хотите отправить алғыс! Можешь указать Имя и Фамилию получателя или telegram username (начинается с @), тогда получатель получит уведомление!
-`,
-      Markup.inlineKeyboard([
-        [Markup.button.callback('📝 Указать Имя и Фамилию', 'manual_name')],
-        [Markup.button.callback('📱 Поделиться юзернеймом', 'share_contact')],
-        [Markup.button.callback('❌ Отмена', 'cancel')]
-      ])
+✍️Напишите кому вы хотите выразить алғыс — напишите Имя и Фамилию. Если знаете Telegram username (начинается с @), тоже добавьте — это поможет отметить получателя  и отправить ему уведомление.
+
+📌Пример: Айгуль Ахметова, @aigul_akhmetova`,
+      Markup.keyboard([['❌ Отмена']]).oneTime().resize()
     )
     return ctx.wizard.next()
   },
 
-  // Шаг 2: Получение имени или юзернейма
+  // Шаг 2: Получение школы
   async (ctx) => {
-    const data = (ctx.update as any)?.callback_query?.data
-    if (data === 'manual_name') {
-      (ctx.wizard.state as any).mode = 'manual'
-      await ctx.answerCbQuery()
-      await ctx.reply('✍️ Введи имя и фамилию получателя:')
-      return ctx.wizard.selectStep(2)
-    } else if (data === 'share_contact') {
-      (ctx.wizard.state as any).mode = 'contact'
-      await ctx.answerCbQuery()
-      await ctx.reply('📱 Укажи @юзернейм получателя:')
-      return ctx.wizard.selectStep(3)
-    }
-    await ctx.reply('❗ Выберите один из вариантов.')
-  },
-
-  // Шаг 2.1: Получаем имя
-  async (ctx) => {
-    if ('text' in (ctx.message || {})) {
+    if ('text' in ((ctx.message as any) || {})) {
       (ctx.wizard.state as any).recipient = (ctx.message as any).text
-      await ctx.reply('🏫 В какой школе работает получатель алғыса?', Markup.keyboard(schools.map(name => [name])).oneTime().resize())
-      return ctx.wizard.selectStep(4)
-    }
-    await ctx.reply('❗ Введите текстом имя и фамилию.')
-  },
-
-  // Шаг 2.2: Получаем юзернейм
-  async (ctx) => {
-    if ('text' in (ctx.message || {})) {
-      (ctx.wizard.state as any).recipient = (ctx.message as any).text
-      await ctx.reply('🏫 В какой школе работает получатель алғыса?', Markup.keyboard(schools.map(name => [name])).oneTime().resize())
+      await ctx.reply('🏫 В какой школе работает получатель алғыса?', Markup.keyboard(
+        schools.map(name => [name])
+      ).oneTime().resize())
       return ctx.wizard.next()
     }
-    await ctx.reply('❗ Укажи корректный @юзернейм.')
+    await ctx.reply('❗ Введите имя и фамилию получателя.')
   },
 
-  // Шаг 3: Получение школы
+  // Шаг 3: Школа → Что сделал(а)
   async (ctx) => {
-    if ('text' in (ctx.message || {})) {
+    if ('text' in ((ctx.message as any) || {})) {
       (ctx.wizard.state as any).school = (ctx.message as any).text
-      await ctx.reply(`Давай вместе подумаем, как сделать твой алғыс более тёплым и конкретным 💌 чтобы он отражал поступок коллеги, проявленные качества и результат его действий!
+      await ctx.reply(
+        `Давай вместе подумаем, как сделать твой алғыс более тёплым и конкретным 💌
 
-✍️Напиши что сделал(а) твой коллега? Подумай, какой конкретный поступок ты хочешь отметить.
+✍️Что сделал(а) твой коллега?
+Подумай, какой поступок ты хочешь отметить и чем он помог команде, тебе или школе.
 
-📌 Например: помог провести презентацию, поддержал коллегу, реализовал идею, показал усердность, поделился знаниями и тд...`)
+📌 Например: помог провести презентацию, стала наставником для новичков, реализовал идею... это помогло завершить проект в срок, удержать новых сотрудников и тд.`
+      )
+
+      Markup.removeKeyboard()
       return ctx.wizard.next()
     }
     await ctx.reply('❗ Пожалуйста, выбери школу из списка.')
   },
 
-  // Шаг 3.1: Что сделал
+  // Шаг 4: Качества
   async (ctx) => {
-    if ('text' in (ctx.message || {})) {
+    if ('text' in ((ctx.message as any) || {})) {
       (ctx.wizard.state as any).what = (ctx.message as any).text
-      await ctx.reply(`✍️ Напиши,какие качества продемонстрировал твой коллега? Подумай, какой суперсилой он обладает?
+      await ctx.reply(
+        `✍️ Напиши,какие качества продемонстрировал твой коллега? Подумай, какой суперсилой он обладает?
 
-📌Например: благодаря его настойчивости мы смогли довести проект до конца быстро и в срок, проявленная ее открытость помогла нам внутри коллектива обсудить трудные моменты честно, его инициатива вдохновила других — и команда тоже начала предлагать идеи...`)
+📌Например: его инициативность вдохновила команду, его креативность привела к созданию уникальной программы...`
+      )
       return ctx.wizard.next()
     }
-    await ctx.reply('❗ Пожалуйста, введи текст.')
+    await ctx.reply('❗ Введите текст.')
   },
 
-  // Шаг 3.2: Качества
+  // Шаг 5: Выбор стиля
   async (ctx) => {
-    if ('text' in (ctx.message || {})) {
+    if ('text' in ((ctx.message as any) || {})) {
       (ctx.wizard.state as any).qualities = (ctx.message as any).text
-      await ctx.reply(`✍️ Напиши, чем это помогло тебе, команде или школе? Теперь подумай, что изменилось благодаря его/её действию.
-
-📌Например: мы завершили проект вовремя и с отличным результатом, появилось больше доверия и тепла в коллективе, команда сплотилась, ученики или родители получили лучший опыт...`)
+      await ctx.reply(
+        'Давай подберём открытку! 🎁\nВыбери ниже ценность, которая лучше всего отражает твоего коллегу и то, за что ты хочешь его поблагодарить — мы подберём открытку, которая это передаёт 🌟',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('Порядочность', 'style_decency')],
+          [Markup.button.callback('Эмпатия', 'style_customer')],
+          [Markup.button.callback('Постоянное развитие', 'style_team')],
+          [Markup.button.callback('Усердная работа', 'style_work')],
+          [Markup.button.callback('Мы - лучшая команда', 'style_kaizen')],
+          [Markup.button.callback('❌ Отмена', 'cancel')]
+        ])
+      )
       return ctx.wizard.next()
     }
-    await ctx.reply('❗ Пожалуйста, введи текст.')
+    await ctx.reply('❗ Введите текст.')
   },
 
-  // Шаг 3.3: Результат
-  async (ctx) => {
-    if ('text' in (ctx.message || {})) {
-      (ctx.wizard.state as any).impact = (ctx.message as any).text
-      await ctx.reply(`Давай подберём открытку! 🎁
-Выбери ниже ценность, которая лучше всего отражает твоего коллегу и то, за что ты хочешь его поблагодарить — мы подберём открытку, которая это передаёт 🌟`, Markup.inlineKeyboard([
-        [Markup.button.callback('Порядочность', 'style_decency')],
-        [Markup.button.callback('Эмпатия', 'style_customer')],
-        [Markup.button.callback('Постоянное развитие', 'style_team')],
-        [Markup.button.callback('Усердная работа', 'style_work')],
-        [Markup.button.callback('Мы - лучшая команда', 'style_kaizen')],
-        [Markup.button.callback('❌ Отмена', 'cancel')]
-      ]))
-      return ctx.wizard.next()
-    }
-    await ctx.reply('❗ Введи текст результата.')
-  },
-
-  // Шаг 4: выбор стиля
+  // Шаг 6: От кого отправить
   async (ctx) => {
     const data = (ctx.update as any)?.callback_query?.data
-    if (!data) {
-      await ctx.reply('❗ Выбери стиль через кнопку.')
-      return
-    }
+    if (!data) return ctx.reply('❗ Выберите стиль.');
 
     (ctx.wizard.state as any).style = data.replace('style_', '')
     await ctx.answerCbQuery()
@@ -150,70 +121,56 @@ const rahmetikScene = new Scenes.WizardScene<MyContext>(
     return ctx.wizard.next()
   },
 
-  // Шаг 5: От кого отправить открытку
+  // Шаг 7: Сбор и отправка
   async (ctx) => {
-    if ('text' in (ctx.message || {})) {
-      (ctx.wizard.state as any).sender = (ctx.message as any).text
+    if (!('text' in ((ctx.message as any) || {}))) return ctx.reply('❗ Введите имя отправителя.');
+    (ctx.wizard.state as any).sender = (ctx.message as any).text
 
-      const {
-        recipient, school, what, qualities, impact,
-        style, sender
-      } = ctx.wizard.state as any
+    const { recipient, school, what, qualities, style, sender } = ctx.wizard.state as any
 
-      const styleToImage: Record<string, string> = {
-        decency: 'decency.png',
-        customer: 'customer.png',
-        team: 'team.png',
-        work: 'work.png',
-        kaizen: 'kaizen.png'
-      }
+    const styleToImage: Record<string, string> = {
+      decency: 'decency.png',
+      customer: 'customer.png',
+      team: 'team.png',
+      work: 'work.png',
+      kaizen: 'kaizen.png'
+    }
 
-      const imageFileName = styleToImage[style]
-      if (!imageFileName) {
-        await ctx.reply('❗ Ошибка: неизвестный стиль.')
-        return ctx.scene.leave()
-      }
-
-      const imagePath = path.resolve(__dirname, '..', 'assets', 'rahmetiki', imageFileName)
-      const caption = `
-      🌟 *Алғыс білдіремін!*
-👤 *Кому:* ${recipient} 
-🏫 *Школа:* ${school}
-
-${what}!
-${qualities}!
-${impact}!
-
-*✍️ ${sender}*
-      `
-
-
-      const channel = await prisma.channel.findFirst()
-      if (!channel || !channel.groupId || !channel.messageThreadId) {
-        await ctx.reply('❗ Канал или тред не настроен. Используйте /setchannel.')
-        return ctx.scene.leave()
-      }
-
-      await ctx.telegram.sendPhoto(channel.groupId.toString(), {
-        source: fs.readFileSync(imagePath)
-      }, {
-        caption,
-        parse_mode: 'Markdown',
-        // message_thread_id: channel.messageThreadId
-      })
-
-      await ctx.reply(`💬 Спасибо за помощь в проведении тренинга для вновь принятых педагогов!
-        
-Благодаря данному тренингу участники не просто познакомились с процессами, но и почувствовали себя увереннее, быстрее включились в работу и увидели, что здесь им всегда готовы помочь.
-Его открытость, вовлечённость и готовность уделить время новичкам создали пространство, где было легко задавать вопросы, делиться сомнениями и получать ответы.`)
+    const image = styleToImage[style]
+    if (!image) {
+      await ctx.reply('❗ Ошибка: неизвестный стиль открытки.')
       return ctx.scene.leave()
     }
 
-    await ctx.reply('❗ Введи имя отправителя.')
+    const channel = await prisma.channel.findFirst()
+    if (!channel || !channel.groupId || !channel.messageThreadId) {
+      await ctx.reply('❗ Группа или тред не настроены. Используйте /setchannel.')
+      return ctx.scene.leave()
+    }
+
+    const imagePath = path.resolve(__dirname, '..', 'assets', 'rahmetiki', image)
+
+    const caption = `
+🌟 *Алғыс білдіремін!*
+👤 *Кому:* ${u(recipient)} 
+🏫 *Школа:* ${u(school)}
+
+${u(what)}!
+${u(qualities)}!
+
+*✍️ ${u(sender)}*
+    `
+
+    await ctx.telegram.sendPhoto(channel.groupId.toString(), { source: fs.readFileSync(imagePath) }, {
+      caption,
+      parse_mode: 'Markdown',
+    })
+
+    await ctx.reply('💌 Ваш Алғыс принят и опубликован в группе. Тёплые слова — это сила.')
+    return ctx.scene.leave()
   }
 )
 
-// Общий обработчик отмены
 rahmetikScene.hears('❌ Отмена', async (ctx) => {
   await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
   return ctx.scene.leave()
