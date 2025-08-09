@@ -84,7 +84,7 @@ bot.start(async (ctx) => {
 
 
 bot.command('menu', async (ctx) => {
-  ctx.reply(`Нажми на кнопку внизу и мы начнем!`, menuKeyboard)
+  ctx.reply(`Нажмите на кнопку внизу и мы начнем!`, menuKeyboard)
 })
 
 
