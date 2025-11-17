@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  bot:
+    build: .
+    container_name: udemy-bot
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./credentials/google-sheets:/app/secret
+    networks:
+      - backend
+    command: ['node', 'dist/index.js']
+
   db:
     image: postgres:15
     container_name: telegram-postgres

@@ -4,7 +4,7 @@ import { promisify } from 'util'
 
 export async function saveNomination(data: any) {
   const auth = new google.auth.GoogleAuth({
-    keyFile: path.resolve(__dirname, '../../../credentials/google-sheets/biedubot-312c6f1e5bea.json'),
+    keyFile: "/app/secret/biedubot-312c6f1e5bea.json",
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
   })
 
