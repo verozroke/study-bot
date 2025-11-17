@@ -1,5 +1,7 @@
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
+
+RUN apt-get update -y && apt-get install -y openssl
 
 WORKDIR /app
 
@@ -16,7 +18,9 @@ RUN npm run build
 RUN cp -r src/assets dist/assets
 
 
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
+
+RUN apt-get update -y && apt-get install -y openssl
 
 WORKDIR /app
 
