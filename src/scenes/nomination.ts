@@ -1,6 +1,6 @@
-import { Scenes, Markup } from 'telegraf'
-import { MyContext } from '../types/bot'
-import { saveNomination } from '../utils/nomination/save-nomination'
+import { Scenes, Markup } from "telegraf";
+import { MyContext } from "../types/bot";
+import { saveNomination } from "../utils/nomination/save-nomination";
 
 const schools = [
   "Aldi BI",
@@ -20,11 +20,11 @@ const schools = [
   "Quantum TECH",
   "Quantum STEM",
   "QMC",
-  "BI Education"
+  "BI Education",
 ];
 
 const nominationScene = new Scenes.WizardScene<MyContext>(
-  'nomination-wizard',
+  "nomination-wizard",
 
   // Шаг 0 — стартовое сообщение
   async (ctx) => {
@@ -43,38 +43,68 @@ const nominationScene = new Scenes.WizardScene<MyContext>(
 
 Вы можете номинировать одного или нескольких коллег.`,
       Markup.inlineKeyboard([
-        [Markup.button.callback('ℹ️ Ознакомиться с критериями', 'NOM_CRITERIA')],
-        [Markup.button.callback('🏅 Номинировать коллегу', 'NOM_START')]
-      ])
-    )
+        [
+          Markup.button.callback(
+            "ℹ️ Ознакомиться с критериями",
+            "NOM_CRITERIA",
+          ),
+        ],
+        [Markup.button.callback("🏅 Номинировать коллегу", "NOM_START")],
+      ]),
+    );
   },
 
   // Шаг 1 — ФИО автора
   async (ctx) => {
-    if (!('text' in ((ctx.message as any) ?? {}))) return
-    (ctx.wizard.state as any).authorFullname = (ctx.message as any).text
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    (ctx.wizard.state as any).authorFullname = (ctx.message as any).text;
     await ctx.reply(
-      '🏫 Выберите организацию, в которой работает ваш коллега:',
-      Markup.keyboard(schools.map(s => [s])).resize().oneTime()
-    )
-    return ctx.wizard.next()
+      "🏫 Выберите организацию, в которой работает вы работаете:",
+      Markup.keyboard(schools.map((s) => [s]))
+        .resize()
+        .oneTime(),
+    );
+    return ctx.wizard.next();
+  },
+
+  // Шаг 1 — Школа автора
+  async (ctx) => {
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    (ctx.wizard.state as any).authorSchool = (ctx.message as any).text;
+    await ctx.reply("✍️ Напишите ФИО коллеги:");
+    return ctx.wizard.next();
+  },
+
+  // Шаг 2 — ФИО коллеги
+  async (ctx) => {
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    (ctx.wizard.state as any).colleagueFullName = (ctx.message as any).text;
+    await ctx.reply(
+      "🏫 Выберите организацию, в которой работает ваш коллега:",
+      Markup.keyboard(schools.map((s) => [s]))
+        .resize()
+        .oneTime(),
+    );
+    return ctx.wizard.next();
   },
 
   // Шаг 2 — школа
   async (ctx) => {
-    if (!('text' in ((ctx.message as any) ?? {}))) return
-    (ctx.wizard.state as any).colleagueSchool = (ctx.message as any).text
-    await ctx.reply('✍️ Укажите должность коллеги:')
-    return ctx.wizard.next()
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    (ctx.wizard.state as any).colleagueSchool = (ctx.message as any).text;
+    await ctx.reply("✍️ Укажите должность коллеги:");
+    return ctx.wizard.next();
   },
 
   // Шаг 3 — должность
-  // Шаг 3 — должность
   async (ctx) => {
-    if (!('text' in ((ctx.message as any) ?? {}))) return
-    (ctx.wizard.state as any).colleaguePosition = (ctx.message as any).text
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    (ctx.wizard.state as any).colleaguePosition = (ctx.message as any).text;
 
-    const imagePath = require('path').resolve(__dirname, '../assets/nomination/image.png')
+    const imagePath = require("path").resolve(
+      __dirname,
+      "../assets/nomination/image.png",
+    );
 
     await ctx.replyWithPhoto(
       { source: imagePath },
@@ -83,69 +113,71 @@ const nominationScene = new Scenes.WizardScene<MyContext>(
 Ознакомьтесь с ценностями Компании для дальнейшего описания «Почему номинант носитель наших ценностей?»`,
         reply_markup: {
           inline_keyboard: [
-            [{ text: '✨ Начать описание', callback_data: 'NOM_DESC' }]
-          ]
-        }
-      }
-    )
+            [{ text: "✨ Начать описание", callback_data: "NOM_DESC" }],
+          ],
+        },
+      },
+    );
 
-    return ctx.wizard.next()
+    return ctx.wizard.next();
   },
 
   // Шаг 4 — описание
   async (ctx) => {
-    if (!('text' in ((ctx.message as any) ?? {}))) return
-    const text = (ctx.message as any).text
+    if (!("text" in ((ctx.message as any) ?? {}))) return;
+    const text = (ctx.message as any).text;
 
     if (text.length < 30) {
       return ctx.reply(
         `Необходимо закончить описание. 
-        Просим написать несколько предложений почему выдвенутый вами номинант соответствует званию "Амбассадор ценностей`
-      )
+        Просим написать несколько предложений почему выдвенутый вами номинант соответствует званию "Амбассадор ценностей`,
+      );
     }
 
-    (ctx.wizard.state as any).description = text
+    (ctx.wizard.state as any).description = text;
 
-    await saveNomination(ctx.wizard.state)
+    await saveNomination(ctx.wizard.state);
 
     await ctx.reply(
       `Номинация успешно отправлена 💚
 
 Спасибо, что укрепляете культуру признания в BI Education.`,
-      Markup.removeKeyboard()
-    )
+      Markup.removeKeyboard(),
+    );
 
-    return ctx.scene.leave()
-  }
-)
-
+    return ctx.scene.leave();
+  },
+);
 
 // === КНОПКИ ===
 
 // начать заполнение
-nominationScene.action('NOM_START', async (ctx) => {
-  await ctx.answerCbQuery()
-  await ctx.reply(`Для начала расскажите немного о себе 😊
-✍️ Введите ваше ФИО:`, Markup.removeKeyboard())
-  return ctx.wizard.selectStep(1)
-})
+nominationScene.action("NOM_START", async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.reply(
+    `Для начала расскажите немного о себе 😊
+✍️ Введите ваше ФИО:`,
+    Markup.removeKeyboard(),
+  );
+  return ctx.wizard.selectStep(1);
+});
 
 // начать описание
-nominationScene.action('NOM_DESC', async (ctx) => {
-  await ctx.answerCbQuery()
+nominationScene.action("NOM_DESC", async (ctx) => {
+  await ctx.answerCbQuery();
   await ctx.reply(
     `✍️ Опишите, почему вы считаете этого человека достойным звания «Амбассадор ценностей». 💌
 
 Пожалуйста, приведите конкретный пример поведения или историю из случаев в жизни. 
 
-Пример: Асыл ұстаз честно говорит с коллегами, не скрывает информацию и принимает решения во благо школы, не причиняя вреда людям (порядочность и эмпатия). Организовал профессиональные сообщества по предметам, делится идеями и инструментами (непрерывное развитие), умеет объединять людей вокруг общих целей (лучшая команда и усердная работа).`
-  )
-  return ctx.wizard.selectStep(4)
-})
+Пример: Асыл ұстаз честно говорит с коллегами, не скрывает информацию и принимает решения во благо школы, не причиняя вреда людям (порядочность и эмпатия). Организовал профессиональные сообщества по предметам, делится идеями и инструментами (непрерывное развитие), умеет объединять людей вокруг общих целей (лучшая команда и усердная работа).`,
+  );
+  return ctx.wizard.selectStep(4);
+});
 
 // критерии
-nominationScene.action('NOM_CRITERIA', async (ctx) => {
-  await ctx.answerCbQuery()
+nominationScene.action("NOM_CRITERIA", async (ctx) => {
+  await ctx.answerCbQuery();
   await ctx.reply(
     `Номинация үміткері «Құндылықтар елшісі»
 
@@ -167,17 +199,17 @@ nominationScene.action('NOM_CRITERIA', async (ctx) => {
 
 Если ваш коллега соответствует этим критериям — вы можете перейти к номинации 💚`,
     Markup.inlineKeyboard([
-      [Markup.button.callback('🏅 Номинировать коллегу', 'NOM_START')],
-      [Markup.button.callback('❌ Отмена', 'NOM_CANCEL')]
-    ])
-  )
-})
+      [Markup.button.callback("🏅 Номинировать коллегу", "NOM_START")],
+      [Markup.button.callback("❌ Отмена", "NOM_CANCEL")],
+    ]),
+  );
+});
 
 // отмена
-nominationScene.action('NOM_CANCEL', async (ctx) => {
-  await ctx.answerCbQuery()
-  await ctx.reply('❌ Действие отменено.', Markup.removeKeyboard())
-  return ctx.scene.leave()
-})
+nominationScene.action("NOM_CANCEL", async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.reply("❌ Действие отменено.", Markup.removeKeyboard());
+  return ctx.scene.leave();
+});
 
-export default nominationScene
+export default nominationScene;
