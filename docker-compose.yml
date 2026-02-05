@@ -1,32 +1,22 @@
 services:
   bot:
-    build: .
-    container_name: udemy-bot
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ./credentials/google-sheets:/app/secret
-    depends_on:
-      - db
-    networks:
-      - backend
+    image: verozroke/bi-bot:latest
+    restart: always
+    environment:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/telegrambot'
+      BOT_TOKEN: '7348341691:AAH9o-XNMmGKbA9BkAkh8bahFR8fhhAmQIM'
+      ADMIN_SECRET: 'P@55w0rd!'
+      CHANNEL_SECRET: 'P@55w0rd!'
+      GEMINI_API_KEY: 'AIzaSyBaTRUeo1YB-aKqA0rBjmWdCizr8Es16zc'
+      GOOGLE_SHEETS_ID: '1GE-e-XsyT63Gfrrm8NOMZT-H-xlPG6qXD3SD-yuFWf8'
 
   db:
     image: postgres:15
-    container_name: telegram-postgres
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: telegrambot
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - backend
 
 volumes:
   pgdata:
-
-networks:
-  backend:
