@@ -74,7 +74,6 @@ const nominationScene = new Scenes.WizardScene<MyContext>(
     await ctx.reply("✍️ Напишите ФИО коллеги:");
     return ctx.wizard.next();
   },
-
   // Шаг 2 — ФИО коллеги
   async (ctx) => {
     if (!("text" in ((ctx.message as any) ?? {}))) return;
