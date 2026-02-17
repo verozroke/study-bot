@@ -102,7 +102,7 @@ const nominationScene = new Scenes.WizardScene<MyContext>(
 
     const imagePath = require("path").resolve(
       __dirname,
-      "../assets/nomination/image.png",
+      "../assets/nomination/image.jpg",
     );
 
     await ctx.replyWithPhoto(
